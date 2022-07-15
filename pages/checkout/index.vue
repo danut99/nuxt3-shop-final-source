@@ -119,7 +119,7 @@
         }
         const req = new HttpClient(runtimeConfig.public.apiBase, runtimeConfig.public.apiKey);
         await useAsyncData('createOrder', () => req.createOrder(productIds, description, lastName.value, email.value));
-        localStorage.clear();
+        cartStore.clearLocalStorage();
         setTimeout(() => {
             router.push('/orders');
         }, 1000);
