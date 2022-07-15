@@ -76,6 +76,10 @@ export const useCartStore = defineStore('cartStore', {
             if(this.contents[productId]){
                 delete this.contents[productId];
             }
+        },
+        clearLocalStorage() {
+            localStorage.clear();
+            this.contents = {};
         }
 
     }
