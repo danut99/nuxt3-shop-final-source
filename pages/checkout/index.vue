@@ -53,9 +53,9 @@
                         </div>
                         <div class="mt-4">
                             <button
-                                class="w-full px-6 py-2 text-blue-200 bg-blue-600 hover:bg-blue-900" @click.prevent="checkout">Process
+                                class="w-full px-6 py-2 text-blue-200 bg-blue-600 hover:bg-blue-900" @click.prevent="checkout" >Process
                             </button>
-                            <p :class="succes ? 'bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative': 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative'" v-show="msg"> {{msg}}</p>
+                            <p :class="success ? 'bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative': 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative'" v-show="msg"> {{msg}}</p>
                         </div>
                     </div>
                 </form>
@@ -66,16 +66,16 @@
                         Order Summary
                     </h2>
                     <div class="mt-8">
-                        <div class="flex flex-col space-y-4">
+                        <div class="flex flex-col space-y-4" v-for="product in formattedCart" :key="product.data">
                             <div class="flex space-x-4 my-2">
                                 <div>
-                                    <img src="https://api.apisful.com/v1/files/9WpdQW5/0cf894bbc8f2e0857388396dc48972f9/asa.png" alt="image" class="w-20">
+                                    <img :src="`${product.image}`" alt="image" class="w-20">
                                 </div>
                                 <div>
-                                    <h2 class="text-xl font-bold">LeBron James T-shirt</h2>
-                                    <span class="text-center w-1/5 font-semibold text-sm"> PRICE: <span> $20 </span></span><br>
-                                    <span class="text-center w-1/5 font-semibold text-sm"> QUANTITY: <span> 1 </span></span><br>
-                                    <span class="text-center w-1/5 font-semibold text-sm"> COST: <span> 20 </span></span><br>
+                                    <h2 class="text-xl font-bold">{{product.title}}</h2>
+                                    <span class="text-center w-1/5 font-semibold text-sm"> PRICE: <span> ${{product.price}} </span></span><br>
+                                    <span class="text-center w-1/5 font-semibold text-sm"> QUANTITY: <span>{{product.quantity}}</span></span><br>
+                                    <span class="text-center w-1/5 font-semibold text-sm"> COST: <span> {{product.cost}} </span></span><br>
                                 </div>
                                 <div>
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -87,7 +87,7 @@
                     </div>
                     <div
                         class="flex items-center font-bold w-full py-4 text-sm font-semibold border-b border-gray-300 lg:py-5 lg:px-3 text-heading last:border-b-0 last:text-base last:pb-0">
-                            Total<span class="ml-2">20
+                            Total<span class="ml-2">{{total}}
                         </span>
                     </div>
                 </div>
@@ -96,5 +96,45 @@
     </div>
 </template>
 <script setup>
-  
+    import HttpClient from '~/api/api-service'
+    import { useCartStore } from "../../store/cart";
+    const msg = ref();
+    const success = ref(false);
+    const firstName = ref();
+    const lastName = ref();
+    const postalCode = ref();
+    const address = ref();
+    const email = ref();
+    const city = ref();
+    const router = useRouter();
+    const cartStore = useCartStore();
+    const { formattedCart, total } = toRefs(cartStore);
+    const runtimeConfig = useRuntimeConfig();
+    const checkoutProducts = async () => {
+        let productIds = [];
+        let description = '';
+        for(const cartProduct of formattedCart.value) {
+            productIds.push(cartProduct.id);
+            description += `[${cartProduct.title}: price: ${cartProduct.price}, quantity:${cartProduct.quantity}, Cost:${cartProduct.cost}] Total: ${total.value}`;
+        }
+        const req = new HttpClient(runtimeConfig.public.apiBase, runtimeConfig.public.apiKey);
+        await useAsyncData('createOrder', () => req.createOrder(productIds, description, lastName.value, email.value));
+        localStorage.clear();
+        setTimeout(() => {
+            router.push('/orders');
+        }, 1000);
+    }
+    
+    const checkout = () => {
+        if(firstName.value == undefined || lastName.value == undefined || postalCode.value == undefined || address.value == undefined || email.value == undefined || city.value == undefined){
+             msg.value = "Please fill in all fields completely and correctly"
+
+        }else{
+            msg.value = "Your purchase made our day…. We hope that it makes your day too! Thank you for your order."
+            success.value = true;
+            checkoutProducts();
+        }
+
+    }
+
 </script>
